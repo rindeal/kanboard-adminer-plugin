@@ -34,6 +34,10 @@ if (!$container['userSession']->isAdmin()) {
 
 // BEGIN: check adminer
 
+if (!defined('ADMINER_PATH')) {
+    define('ADMINER_PATH', DATA_DIR . DIRECTORY_SEPARATOR . 'adminer' . DIRECTORY_SEPARATOR . 'adminer.php');
+}
+
 if (!is_readable(ADMINER_PATH)) {
     $container['response']->withoutCache()->text('ADMINER_PATH is not a readable file ("'.ADMINER_PATH.'")', 500);
     die();

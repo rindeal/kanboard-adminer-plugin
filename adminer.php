@@ -145,7 +145,7 @@ function adminer_object() {
             return getDbName();
         }
 
-        function databases() {
+        function databases($flush = true) {
             return [ $this->database() ];
         }
 

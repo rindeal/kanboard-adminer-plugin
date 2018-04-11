@@ -19,32 +19,38 @@
 
 use Kanboard\Core\Controller\Runner;
 
+
 // BEGIN: boot
 
 require __DIR__.'/app/common.php';
 
 $runner = new Runner($container);
-$r = new ReflectionMethod($runner, 'executeMiddleware');
-$r->setAccessible(true);
-$r->invoke($runner);
+try {
+    $executeMiddleware = new ReflectionMethod($runner, 'executeMiddleware');
+    $executeMiddleware->setAccessible(true);
+    $executeMiddleware->invoke($runner);
+} catch (\ReflectionException $e) {
+    $container['response']
+        ->withoutCache()
+        ->text("Exception was thrown during Adminer plugin boot: ".$e->getMessage(), 500);
+    die();
+}
 
 // END: boot
 
 // BEGIN: auth
 
-function accessDenied($msg = '') {
-    global $container;
-    $container['response']->withoutCache()->text('Access denied'.($msg?': '.$msg:''), 403);
-    die();
-}
-
 if (!$container['userSession']->isLogged()) {
     session_set('redirectAfterLogin', $container['request']->getUri());
-    $container['response']->redirect($container['helper']->url->to('AuthController', 'login'));
+    $container['response']
+        ->redirect($container['helper']->url->to('AuthController', 'login'));
     die();
 }
 if (!$container['userSession']->isAdmin()) {
-    $container['response']->withoutCache()->text("Access denied: You're not admin", 403);
+    $container['response']
+        ->withoutCache()
+        ->text("Access denied: You're not admin", 403);
+    die();
 }
 
 // END: auth
@@ -52,11 +58,13 @@ if (!$container['userSession']->isAdmin()) {
 // BEGIN: check adminer
 
 if (!defined('ADMINER_PATH')) {
-    define('ADMINER_PATH', DATA_DIR . DIRECTORY_SEPARATOR . 'adminer' . DIRECTORY_SEPARATOR . 'adminer.php');
+    define('ADMINER_PATH', implode(DIRECTORY_SEPARATOR, [DATA_DIR, 'adminer', 'adminer.php']));
 }
 
 if (!is_readable(ADMINER_PATH)) {
-    $container['response']->withoutCache()->text('ADMINER_PATH is not a readable file ("'.ADMINER_PATH.'")', 500);
+    $container['response']
+        ->withoutCache()
+        ->text('ADMINER_PATH is not a readable file ("'.ADMINER_PATH.'")', 500);
     die();
 }
 
